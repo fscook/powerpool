@@ -33,6 +33,7 @@ password_arg_parser.add_argument('-d', '--diff', type=int)
 
 
 class StratumServer(GenericServer):
+    logger = logging.getLogger('stratum_server')
 
     def __init__(self, listener, stratum_clients, config, net_state,
                  server_state, celery, **kwargs):
@@ -48,6 +49,12 @@ class StratumServer(GenericServer):
         # Warning: Not thread safe in the slightest, should be good for gevent
         self.id_count += 1
         self.server_state['stratum_connects'].incr()
+        ip = sock.getpeername()[0]
+        if ip in self.server_state['banned_ips']:
+            self.logger.warn("Peer of address {} being rejected as banned!"
+                             .format(ip))
+            del sock
+            return
         StratumClient(sock, address, self.id_count, self.stratum_clients,
                       self.config, self.net_state, self.server_state, self.celery)
 
@@ -439,6 +446,12 @@ class StratumClient(GenericClient):
         key = self.outcome_to_idx[outcome]
         getattr(self, key).setdefault(now, 0)
         getattr(self, key)[now] += diff
+        if (outcome == self.LOW_DIFF or outcome == self.DUP_SHARE) and len(getattr(self, key)) > 2:
+            self.server_state['banned_ips'].append(self.peer_name[0])
+            self.logger.warn("Banning ddos asshole {}"
+                             .format(self.peer_name[0]))
+            raise Exception("this guys an asshole")
+
         if self.VALID_SHARE == outcome or self.BLOCK_FOUND == outcome:
             self.accepted_shares += diff
 

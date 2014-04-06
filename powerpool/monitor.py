@@ -31,6 +31,7 @@ def general():
                    difficulty=net_state['difficulty'],
                    jobs=len(net_state['jobs']),
                    shares=share_summary,
+                   banned_ips=server_state['banned_ips'],
                    reject_dup=server_state['reject_dup'].summary(),
                    reject_low=server_state['reject_low'].summary(),
                    reject_stale=server_state['reject_stale'].summary(),

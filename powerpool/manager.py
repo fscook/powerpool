@@ -213,6 +213,7 @@ def main():
         'stratum_disconnects': StatManager(),
         'agent_connects': StatManager(),
         'agent_disconnects': StatManager(),
+        'banned_ips': ['127.0.0.1']
     }
 
     exit_event = threading.Event()
